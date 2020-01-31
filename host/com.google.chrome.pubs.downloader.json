@@ -1,0 +1,9 @@
+{
+  "name": "com.google.chrome.pubs.downloader",
+  "description": "Reference importer to pubs",
+  "path": "HOST_PATH",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://abheknbenbdghfakmfandnjabdmfjlkn/"
+  ]
+}
