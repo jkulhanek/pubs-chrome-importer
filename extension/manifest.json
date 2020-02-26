@@ -1,14 +1,16 @@
 {
   "name": "Pubs importer",
   "description": "Imports the contents of current tab into pubs",
-  "version": "1.2",
+  "version": "0.2",
   "permissions": [
-    "activeTab", "nativeMessaging"
+    "activeTab", "nativeMessaging","contextMenus", "declarativeContent"
   ],
-  "browser_action": {
-      "default_title": "Import to pubs",
-      "default_icon": "print_16x16.png",
-      "default_popup": "popup.html"
+  "background": {
+    "scripts": ["connector.js", "background.js"]
   },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzz8YIRdzNwV5x8ZfXpFOVy4DdqL8D8VRitextFERDd1YRwkjAiup16eDGLYSgEJ0KxsGAbgH21jxShyiG9YPxs7f6alV2Wm0F4yn04CpvI+HZ7P78I7AtRLTtUttQYjxipTv5ser0/WNg3SPI8I9QBR99XapOJSil0Ubr7KfvYxQnzBlR7Ep5fezYq+PkJCrmsC7qKGE3m0jNRquSf1e1AjlRzD78x2GTvBMYoXZWtSxNkmGYTzcG1Vj9omgvgbWRQg3Fdc2PIEFFftln+jsywU3ddyeYWbzKhGBE5FDQ6B0uUVUSd52qjt08r0aql7O+oscqYyj12izVwHRxZhnOwIDAQAB",
+  "page_action": {
+      "default_title": "Import to pubs",
+      "default_icon": "print_16x16.png"  },
   "manifest_version": 2
 }

@@ -37,35 +37,49 @@ def read(respond):
     text = sys.stdin.buffer.read(text_length).decode('utf-8')
     try:
         d = json.loads(text)
+        messageId = d['id']
         send_message(json.dumps(respond(d)))
     except Exception as e:
-        print('Error occured %s' % e)
-        send_message(json.dumps(dict(status='failed', message='unknown',detailed=str(e))))
+        message = dict(status='failed', error='Unknown error', message='unknown',detailed=str(e))
+        if messageId:
+            message['id'] = messageId
+        send_message(json.dumps(message))
+
+def import_to_pubs_with_manifest(manifest, document = None, tags = None):
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(manifest)
+        f.seek(0)
+        call = ['pubs', 'add', f.name]
+        if tags is not None:
+            call.extend(['-t', tags])
+        if document is not None:
+            call.extend(['-d', document])
+        subprocess.check_call(call)
+
+def import_to_pubs_from_arxiv(id, document = None, tags = None):
+    call = ['pubs', 'add', '-X', id]
+    if tags is not None:
+        call.extend(['-t', tags])
+    if document is not None:
+        call.extend(['-d', document])
+    subprocess.check_call(call)
+
+def import_to_pubs(obj, doc = None):
+    if 'arxiv_id' in obj:
+        return import_to_pubs_from_arxiv(obj['arxiv_id'], doc, obj['tags'])
+    else:
+        return import_to_pubs_with_manifest(obj['manifest'], doc, obj['tags'])
 
 def respond(obj):
-    print('Received %s' % obj)
-    url = urlparse.urlparse(obj['url'])
-    filepath = None
-    call = None
-    if url.netloc == 'arxiv.org':
-        path = url.path
-        if path[:4] == '/pdf':
-            code = path.split('/')[-1].rstrip('.pdf')
-            call = ['pubs', 'add', '-X', code]
-            filepath = obj['url']
-    if filepath is None:
-        return dict(status='failed', message='not supported %s'% obj['url'])
+    if 'pdf' in obj:
+        with urllib.request.urlopen(obj['pdf']) as resp, tempfile.NamedTemporaryFile() as f:
+            f.write(resp.read())
+            f.seek(0)
+            import_to_pubs(obj, f.name)
+    else:
+        import_to_pubs(obj)
+    return dict(status='success', id=obj['id'])
 
-    print('adding %s' % call)
-
-    with urllib.request.urlopen(filepath) as resp, tempfile.NamedTemporaryFile() as f:
-        f.write(resp.read())
-        f.seek(0)
-        call.extend(['-d', f.name, '-t', ','.join(obj['tags'])])
-        subprocess.check_call(call)
-        #return dict(status='failed', message='responded with error code %s' % status)
-
-    return dict(status='success')
 if __name__ == '__main__':
     read(respond)
     sys.exit(0)
