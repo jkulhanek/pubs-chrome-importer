@@ -72,7 +72,7 @@ def import_to_pubs(obj, doc = None):
 
 def respond(obj):
     if 'pdf' in obj:
-        with urllib.request.urlopen(obj['pdf']) as resp, tempfile.NamedTemporaryFile() as f:
+        with urllib.request.urlopen(obj['pdf']) as resp, tempfile.NamedTemporaryFile(suffix='.pdf') as f:
             f.write(resp.read())
             f.seek(0)
             import_to_pubs(obj, f.name)
