@@ -10,42 +10,55 @@ try:
 except:
     import urllib.parse as urlparse
 
+
 # On Windows, the default I/O mode is O_TEXT. Set this to O_BINARY
 # to avoid unwanted modifications of the input/output streams.
 if sys.platform == "win32":
-  import os, msvcrt
-  msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
-  msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
+    import os
+    import msvcrt
+    msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 # Helper function that sends a message to the webapp.
+
+stdout = sys.stdout
+sys.stdout = sys.stderr
+
+
 def send_message(message):
-   # Write message size.
-  sys.stdout.buffer.write(struct.pack('I', len(message)))
-  # Write the message itself.
-  sys.stdout.buffer.write(bytes(message, 'utf-8'))
-  sys.stdout.flush()
-# Thread that reads messages from the webapp.
-def read(respond):
-  message_number = 0
-  while 1:
+    # Write message size.
+    stdout.buffer.write(struct.pack('I', len(message)))
+    # Write the message itself.
+    message = bytes(message, 'utf-8')
+    stdout.buffer.write(message)
+    stdout.buffer.flush()
+    # Thread that reads messages from the webapp.
+
+
+def respond_std_message(respond):
     # Read the message length (first 4 bytes).
     text_length_bytes = sys.stdin.buffer.read(4)
     if len(text_length_bytes) == 0:
-      sys.exit(0)
+        sys.exit(0)
     # Unpack message length as 4 byte integer.
     text_length = struct.unpack('i', text_length_bytes)[0]
     # Read the text (JSON object) of the message.
     text = sys.stdin.buffer.read(text_length).decode('utf-8')
+    messageId = None
     try:
         d = json.loads(text)
-        messageId = d['id']
-        send_message(json.dumps(respond(d)))
+        messageId = d.get('id', None)
+        message = respond(d)
+        if messageId:
+            message['id'] = messageId
+        send_message(json.dumps(message))
     except Exception as e:
-        message = dict(status='failed', error='Unknown error', message='unknown',detailed=str(e))
+        message = dict(status='failed', error='Unknown error', message='unknown', detailed=str(e))
         if messageId:
             message['id'] = messageId
         send_message(json.dumps(message))
 
-def import_to_pubs_with_manifest(manifest, document = None, tags = None):
+
+def import_to_pubs_with_manifest(manifest, document=None, tags=None):
     with tempfile.NamedTemporaryFile() as f:
         f.write(manifest)
         f.seek(0)
@@ -54,21 +67,24 @@ def import_to_pubs_with_manifest(manifest, document = None, tags = None):
             call.extend(['-t', tags])
         if document is not None:
             call.extend(['-d', document])
-        subprocess.check_call(call)
+        subprocess.check_call(call, stdout=sys.stderr, stderr=sys.stderr)
 
-def import_to_pubs_from_arxiv(id, document = None, tags = None):
+
+def import_to_pubs_from_arxiv(id, document=None, tags=None):
     call = ['pubs', 'add', '-X', id]
     if tags is not None:
         call.extend(['-t', tags])
     if document is not None:
         call.extend(['-d', document])
-    subprocess.check_call(call)
+    subprocess.check_call(call, stdout=sys.stderr, stderr=sys.stderr)
 
-def import_to_pubs(obj, doc = None):
+
+def import_to_pubs(obj, doc=None):
     if 'arxiv_id' in obj:
         return import_to_pubs_from_arxiv(obj['arxiv_id'], doc, obj['tags'])
     else:
         return import_to_pubs_with_manifest(obj['manifest'], doc, obj['tags'])
+
 
 def respond(obj):
     if 'pdf' in obj:
@@ -78,8 +94,9 @@ def respond(obj):
             import_to_pubs(obj, f.name)
     else:
         import_to_pubs(obj)
-    return dict(status='success', id=obj['id'])
+    return dict(status='success')
+
 
 if __name__ == '__main__':
-    read(respond)
+    respond_std_message(respond)
     sys.exit(0)

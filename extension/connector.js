@@ -1,43 +1,16 @@
 var connector = (function () {
-  var port = null;
   var hostName = "com.google.chrome.pubs.downloader";
-  var waitingCallbacks = {};
-  var messageCounter = 1;
 
-  function checkError() {
-    var error = chrome.runtime.lastError.message;
-    if(error) {
-      for(var key in waitingCallbacks) {
-        cb = waitingCallbacks[key];
-        cb({error: error});
-      }
-      waitingCallbacks = {};
-    }
-  }
-  
   function sendMessage(message, cb) {
-    waitingCallbacks[messageCounter] = cb;
-    message.id = messageCounter;
-    messageCounter += 1;
-    if(!port) {
-      port = chrome.runtime.connectNative(hostName);
-      port.onMessage.addListener(function (message) {
-        checkError();
-        var callback = waitingCallbacks[message.id];
-        if(callback) {
-          callback(message);
-          delete waitingCallbacks[message.id];
+    chrome.runtime.sendNativeMessage(
+      hostName,
+      message,
+      function (message) {
+        if(message === undefined) {
+          message = {error: chrome.runtime.lastError.message }
         }
+        cb(message)
       });
-
-      port.onDisconnect.addListener(function () {
-        checkError();
-        port = null;
-      });
-    }
-
-    
-    port.postMessage(message);
   }
 
   function parseRequest(url, tags) {

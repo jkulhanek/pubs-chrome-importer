@@ -138,5 +138,6 @@ if(!dialog) {
   });
 }
 
+dialog.querySelector("#_pubsLoader").style.display = "none";
 dialog.showModal();
 
