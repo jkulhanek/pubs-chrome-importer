@@ -52,21 +52,23 @@ def respond_std_message(respond):
             message['id'] = messageId
         send_message(json.dumps(message))
     except Exception as e:
-        message = dict(status='failed', error='Unknown error', message='unknown', detailed=str(e))
+        import traceback
+        message = dict(status='failed', error=traceback.format_exc(), message='unknown', detailed=str(e))
         if messageId:
             message['id'] = messageId
         send_message(json.dumps(message))
 
 
 def import_to_pubs_with_manifest(manifest, document=None, tags=None):
-    with tempfile.NamedTemporaryFile() as f:
+    with tempfile.NamedTemporaryFile('w') as f:
         f.write(manifest)
         f.seek(0)
-        call = ['pubs', 'add', f.name]
+        call = ['pubs', 'add']
         if tags is not None:
             call.extend(['-t', tags])
         if document is not None:
             call.extend(['-d', document])
+        call.append(f.name)
         subprocess.check_call(call, stdout=sys.stderr, stderr=sys.stderr)
 
 

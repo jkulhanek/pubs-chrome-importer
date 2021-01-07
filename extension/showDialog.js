@@ -105,6 +105,19 @@ var dialogCode = `<dialog id="_pubsDialog" style="
     box-shadow: 0 2.5em 0 0;
   }
 }`;
+
+
+function tryParseInfo() {
+ if(document.location.hostname==='openreview.net') {
+    var bibtex = unescape(document.querySelector('[data-bibtex]').getAttribute('data-bibtex'));
+    var pdf = document.querySelector('a.note_content_pdf').href;
+    return {
+      manifest: bibtex,
+      pdf: pdf
+    };
+  }
+}
+
 var dialog = document.querySelector("dialog#_pubsDialog");
 if(!dialog) {
   document.body.innerHTML += dialogCode;
@@ -132,7 +145,9 @@ if(!dialog) {
 
     dialog.querySelector("#_confirmBtn").addEventListener("click", function() {
       dialog.querySelector("#_pubsLoader").style.display = "block";
-      port.postMessage({ type: "_PUBS_ADD_PUBLICATION", url: window.location.href, tags: tags.value });
+      var info = tryParseInfo();
+      console.log(info);
+      port.postMessage({ type: "_PUBS_ADD_PUBLICATION", url: window.location.href, tags: tags.value, info: info });
     });
     // TODO: remove disabled clas
   });

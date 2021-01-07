@@ -1,5 +1,5 @@
-function importToPubs(url, tags, cb) {
-  connector.addPublication(url, tags, cb);
+function importToPubs(url, tags, info, cb) {
+  connector.addPublication(url, tags, info, cb);
 }
 
 connectedTabs = [];
@@ -8,7 +8,7 @@ function connectTab() {
     const port = chrome.tabs.connect(tabs[0].id);
     port.onMessage.addListener(function (message) {
       console.log(message);
-      importToPubs(message.url, message.tags, (e) => {
+      importToPubs(message.url, message.tags, message.info, (e) => {
         port.postMessage({ type: '_PUBS_RESPONSE', error: e });
       });
     });

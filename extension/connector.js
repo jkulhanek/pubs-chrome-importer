@@ -13,7 +13,7 @@ var connector = (function () {
       });
   }
 
-  function parseRequest(url, tags) {
+  function parseRequest(url, tags, info) {
     url = new URL(url);
     request = null;
     if(url.hostname == 'arxiv.org') {
@@ -31,13 +31,18 @@ var connector = (function () {
         request.pdf = 'https://arxiv.org/pdf/' + request.arxiv_id + '.pdf';
       }
     }
+    else {
+      if(info) {
+        request = info;
+      }
+    }
     if(request)
       request.tags = tags;
     return request;
   }
-  function addPublication(url, tags, cb) {
+  function addPublication(url, tags, info, cb) {
     try {
-      var request = parseRequest(url, tags);
+      var request = parseRequest(url, tags, info);
       if(!request) {
         cb("Publication not found");
       }
@@ -54,7 +59,7 @@ var connector = (function () {
         }
       });
     } catch(e) {
-      console.log(e);
+      console.error(e);
       cb("Unknown error");
     }
   }
